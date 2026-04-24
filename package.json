@@ -1,0 +1,51 @@
+{
+  "name": "@howaboua/pi-auto-reasoning-tool",
+  "version": "0.1.0",
+  "description": "Pi package that gives agents a change_reasoning tool for adjusting reasoning level when substantial work is likely.",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": "./src/index.ts",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "prepack": "npm run check"
+  },
+  "keywords": [
+    "pi",
+    "pi-package",
+    "pi-extension",
+    "reasoning",
+    "reasoning-level",
+    "coding-agent"
+  ],
+  "author": "howaboua",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/howaboua/pi-auto-reasoning-tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/howaboua/pi-auto-reasoning-tool/issues"
+  },
+  "homepage": "https://github.com/howaboua/pi-auto-reasoning-tool#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mariozechner/pi-ai": "^0.70.0"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "^0.70.0",
+    "@types/node": "^24.10.0",
+    "typescript": "^5.9.3"
+  }
+}
