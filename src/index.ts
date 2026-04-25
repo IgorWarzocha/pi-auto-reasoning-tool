@@ -1,19 +1,25 @@
 import { StringEnum, Type } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 
-type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+type ToolReasoningLevel = "low" | "medium" | "high";
+type AppliedReasoningLevel = "off" | "minimal" | ToolReasoningLevel | "xhigh";
 
 type LastSelection = {
-	requestedLevel: ThinkingLevel;
-	appliedLevel: ThinkingLevel;
-	previousLevel: ThinkingLevel;
+	requestedLevel: ToolReasoningLevel;
+	appliedLevel: AppliedReasoningLevel;
+	previousLevel: AppliedReasoningLevel;
 };
 
-const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const;
+const TOOL_REASONING_LEVELS = ["low", "medium", "high"] as const;
+const DEFAULT_REASONING_LEVEL = "low" satisfies ToolReasoningLevel;
 
-function formatModelNote(ctx: ExtensionContext, requestedLevel: ThinkingLevel, appliedLevel: ThinkingLevel): string | undefined {
+function formatModelNote(
+	ctx: ExtensionContext,
+	requestedLevel: ToolReasoningLevel,
+	appliedLevel: AppliedReasoningLevel,
+): string | undefined {
 	if (!ctx.model) return "No model is selected yet; Pi may clamp this level after a model is selected.";
-	if (!ctx.model.reasoning && appliedLevel === "off" && requestedLevel !== "off") {
+	if (!ctx.model.reasoning && appliedLevel === "off") {
 		return `Current model ${ctx.model.provider}/${ctx.model.id} does not advertise reasoning support, so Pi clamped the level to off.`;
 	}
 	if (requestedLevel !== appliedLevel) {
@@ -29,15 +35,18 @@ export default function autoReasoningSelector(pi: ExtensionAPI) {
 		name: "change_reasoning",
 		label: "Change Reasoning",
 		description: "Set your reasoning level for the current task.",
-		promptSnippet: "Set reasoning level when the user prompt implies substantial follow-up work: default medium; low for small/simple, high for hard/risky/broad, xhigh extreme.",
+		promptSnippet:
+			"Set reasoning level sparingly: low default/simple/back-and-forth/cleanup; medium complex single task or feature planning; high multiple tasks, architecture-spanning work, or unexpectedly hard issues.",
 		promptGuidelines: [
-			"Consider change_reasoning only after analyzing whether the user prompt implies substantial follow-up work; it often does not need to be called.",
-			"Default to medium for substantial normal coding/debugging work or when unsure.",
-			"Skip change_reasoning for answers, quick checks, or obvious/simple/mechanical tasks unless the current level is clearly wrong.",
+			"Use change_reasoning sparingly; it is often unnecessary because low is the default operating mode.",
+			"Prefer calling change_reasoning in parallel with other useful tool calls so you do not waste a turn only changing reasoning.",
+			"Use low for single simple tasks, back-and-forth conversations, or simple cleanup after harder tasks.",
+			"Use medium for complex single tasks or planning features.",
+			"Use high for handling multiple tasks in one turn, work spanning different architecture elements, or unexpected hard-to-solve issues during a turn.",
 		],
 		parameters: Type.Object({
-			level: StringEnum(THINKING_LEVELS, {
-				description: "Reasoning level to use for this task.",
+			level: StringEnum(TOOL_REASONING_LEVELS, {
+				description: "Reasoning level to use for this task: low, medium, or high.",
 			}),
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
@@ -68,5 +77,9 @@ export default function autoReasoningSelector(pi: ExtensionAPI) {
 				details: lastSelection,
 			};
 		},
+	});
+
+	pi.on("agent_end", async () => {
+		pi.setThinkingLevel(DEFAULT_REASONING_LEVEL);
 	});
 }

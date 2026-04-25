@@ -2,13 +2,15 @@
 
 A small [Pi](https://pi.dev) package that lets agents adjust their own reasoning level with a `change_reasoning` tool.
 
-The tool is intentionally minimal: the agent directly chooses a level, and the extension calls Pi's `setThinkingLevel` API. No scoring rubric, no UI, no commands.
+The tool is intentionally minimal: the agent directly chooses `low`, `medium`, or `high`, and the extension calls Pi's `setThinkingLevel` API. No scoring rubric, no UI, no commands.
+
+After every agent run, the extension automatically resets reasoning back to `low`.
 
 ## Why
 
-Pi already supports reasoning levels. This package exposes that control as an agent-callable tool so the agent can raise or lower its budget when a user prompt looks like substantial follow-up work.
+Pi already supports reasoning levels. This package exposes a narrow agent-callable tool so the agent can raise its budget when a prompt or in-progress discovery actually needs it, while returning to cheap/default operation afterward.
 
-It is meant to be conservative: the tool prompt tells the agent that it often does **not** need to call the tool.
+The prompt is conservative: agents are told to use the tool sparingly and preferably in parallel with other useful tool calls, avoiding standalone reasoning-change turns.
 
 ## Install
 
@@ -37,7 +39,7 @@ change_reasoning
 Parameters:
 
 ```text
-level: off | minimal | low | medium | high | xhigh
+level: low | medium | high
 ```
 
 Behavior:
@@ -46,6 +48,7 @@ Behavior:
 2. Extension calls `pi.setThinkingLevel(level)`.
 3. Tool result reports the previous and applied level.
 4. If Pi clamps the requested level because of model capability, the result says so.
+5. On `agent_end`, the extension resets reasoning to `low`.
 
 ## Agent-facing prompt copy
 
@@ -55,21 +58,25 @@ Description:
 
 Prompt snippet:
 
-> Set reasoning level when the user prompt implies substantial follow-up work: default medium; low for small/simple, high for hard/risky/broad, xhigh extreme.
+> Set reasoning level sparingly: low default/simple/back-and-forth/cleanup; medium complex single task or feature planning; high multiple tasks, architecture-spanning work, or unexpectedly hard issues.
 
 Guidelines:
 
-> Consider change_reasoning only after analyzing whether the user prompt implies substantial follow-up work; it often does not need to be called.
+> Use change_reasoning sparingly; it is often unnecessary because low is the default operating mode.
 
-> Default to medium for substantial normal coding/debugging work or when unsure.
+> Prefer calling change_reasoning in parallel with other useful tool calls so you do not waste a turn only changing reasoning.
 
-> Skip change_reasoning for answers, quick checks, or obvious/simple/mechanical tasks unless the current level is clearly wrong.
+> Use low for single simple tasks, back-and-forth conversations, or simple cleanup after harder tasks.
+
+> Use medium for complex single tasks or planning features.
+
+> Use high for handling multiple tasks in one turn, work spanning different architecture elements, or unexpected hard-to-solve issues during a turn.
 
 Parameter:
 
 `level`
 
-> Reasoning level to use for this task.
+> Reasoning level to use for this task: low, medium, or high.
 
 ## Development
 
