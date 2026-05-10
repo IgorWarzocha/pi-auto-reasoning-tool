@@ -37,11 +37,11 @@ export default function autoReasoningSelector(pi: ExtensionAPI) {
 		description: "Change reasoning level.",
 		promptSnippet: "Change reasoning effort when task complexity changes.",
 		promptGuidelines: [
-			"`change_reasoning`: You start on low by default; do not call with level=low unless lowering after a prior increase.",
-			"`change_reasoning`: You may change reasoning level during your turn if task complexity changes.",
-			"`change_reasoning`: Use sparingly; avoid standalone calls when another useful tool call can run in parallel.",
-			"`change_reasoning`: Use medium for complex single tasks, feature planning, or multi-step implementation.",
-			"`change_reasoning`: Use high for multi-area architecture work, hard debugging, or unexpectedly difficult tasks.",
+			"change_reasoning: You start on low by default; do not call with level=low unless lowering after a prior increase.",
+			"change_reasoning: You may change reasoning level during your turn if task complexity changes.",
+			"change_reasoning: Use sparingly; avoid standalone calls when another useful tool call can run in parallel.",
+			"change_reasoning: Use medium for complex single tasks, feature planning, or multi-step implementation.",
+			"change_reasoning: Use high for multi-area architecture work, hard debugging, or unexpectedly difficult tasks.",
 		],
 		parameters: Type.Object({
 			level: StringEnum(TOOL_REASONING_LEVELS, {
