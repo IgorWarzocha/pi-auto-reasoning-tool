@@ -1,5 +1,5 @@
-import { StringEnum, Type } from "@mariozechner/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { StringEnum, Type } from "@earendil-works/pi-ai";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 type ToolReasoningLevel = "low" | "medium" | "high";
 type AppliedReasoningLevel = "off" | "minimal" | ToolReasoningLevel | "xhigh";
