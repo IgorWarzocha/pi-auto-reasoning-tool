@@ -34,19 +34,18 @@ export default function autoReasoningSelector(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "change_reasoning",
 		label: "Change Reasoning",
-		description: "Set your reasoning level for the current task.",
-		promptSnippet:
-			"Set reasoning level sparingly: low default/simple/back-and-forth/cleanup; medium complex single task or feature planning; high multiple tasks, architecture-spanning work, or unexpectedly hard issues.",
+		description: "Change reasoning level.",
+		promptSnippet: "Change reasoning effort when task complexity changes.",
 		promptGuidelines: [
-			"Use change_reasoning sparingly; it is often unnecessary because low is the default operating mode.",
-			"Prefer calling change_reasoning in parallel with other useful tool calls so you do not waste a turn only changing reasoning.",
-			"Use low for single simple tasks, back-and-forth conversations, or simple cleanup after harder tasks.",
-			"Use medium for complex single tasks or planning features.",
-			"Use high for handling multiple tasks in one turn, work spanning different architecture elements, or unexpected hard-to-solve issues during a turn.",
+			"`change_reasoning`: You start on low by default; do not call with level=low unless lowering after a prior increase.",
+			"`change_reasoning`: You may change reasoning level during your turn if task complexity changes.",
+			"`change_reasoning`: Use sparingly; avoid standalone calls when another useful tool call can run in parallel.",
+			"`change_reasoning`: Use medium for complex single tasks, feature planning, or multi-step implementation.",
+			"`change_reasoning`: Use high for multi-area architecture work, hard debugging, or unexpectedly difficult tasks.",
 		],
 		parameters: Type.Object({
 			level: StringEnum(TOOL_REASONING_LEVELS, {
-				description: "Reasoning level to use for this task: low, medium, or high.",
+				description: "low | medium | high",
 			}),
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
