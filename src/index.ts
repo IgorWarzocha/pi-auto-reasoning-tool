@@ -1,5 +1,13 @@
-import { isContextOverflow, StringEnum, Type, type AssistantMessage } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import {
+	type AssistantMessage,
+	isContextOverflow,
+	StringEnum,
+	Type,
+} from "@earendil-works/pi-ai";
+import type {
+	ExtensionAPI,
+	ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
 
 type ToolReasoningLevel = "low" | "medium" | "high";
 type AppliedReasoningLevel = "off" | "minimal" | ToolReasoningLevel | "xhigh";
@@ -38,7 +46,8 @@ function formatModelNote(
 	requestedLevel: ToolReasoningLevel,
 	appliedLevel: AppliedReasoningLevel,
 ): string | undefined {
-	if (!ctx.model) return "No model is selected yet; Pi may clamp this level after a model is selected.";
+	if (!ctx.model)
+		return "No model is selected yet; Pi may clamp this level after a model is selected.";
 	if (!ctx.model.reasoning && appliedLevel === "off") {
 		return `Current model ${ctx.model.provider}/${ctx.model.id} does not advertise reasoning support, so Pi clamped the level to off.`;
 	}
@@ -49,10 +58,16 @@ function formatModelNote(
 }
 
 function isAssistantMessage(message: unknown): message is AssistantMessage {
-	return typeof message === "object" && message !== null && (message as { role?: unknown }).role === "assistant";
+	return (
+		typeof message === "object" &&
+		message !== null &&
+		(message as { role?: unknown }).role === "assistant"
+	);
 }
 
-function getLastAssistantMessage(messages: unknown[]): AssistantMessage | undefined {
+function getLastAssistantMessage(
+	messages: unknown[],
+): AssistantMessage | undefined {
 	for (let index = messages.length - 1; index >= 0; index--) {
 		const message = messages[index];
 		if (isAssistantMessage(message)) return message;
@@ -60,8 +75,12 @@ function getLastAssistantMessage(messages: unknown[]): AssistantMessage | undefi
 	return undefined;
 }
 
-function isRetryableAssistantError(message: AssistantMessage | undefined, contextWindow: number | undefined): boolean {
-	if (!message || message.stopReason !== "error" || !message.errorMessage) return false;
+function isRetryableAssistantError(
+	message: AssistantMessage | undefined,
+	contextWindow: number | undefined,
+): boolean {
+	if (!message || message.stopReason !== "error" || !message.errorMessage)
+		return false;
 	if (isContextOverflow(message, contextWindow)) return false;
 	const { errorMessage } = message;
 	return RETRYABLE_ERROR_PATTERNS.some((pattern) => pattern.test(errorMessage));
@@ -127,6 +146,8 @@ export default function autoReasoningSelector(pi: ExtensionAPI) {
 		if (isRetryableAssistantError(lastAssistant, ctx.model?.contextWindow)) {
 			return;
 		}
-		pi.setThinkingLevel(baselineReasoningLevel ?? FALLBACK_BASELINE_REASONING_LEVEL);
+		pi.setThinkingLevel(
+			baselineReasoningLevel ?? FALLBACK_BASELINE_REASONING_LEVEL,
+		);
 	});
 }
