@@ -4,11 +4,11 @@ A small [Pi](https://pi.dev) package that lets agents adjust their own reasoning
 
 The tool is intentionally minimal: the agent directly chooses `low`, `medium`, or `high`, and the extension calls Pi's `setThinkingLevel` API. No scoring rubric, no UI, no commands.
 
-After every successful/non-retryable agent run, the extension automatically resets reasoning back to `low`. Retryable transport/provider failures keep the current level so Pi's auto-retry does not accidentally drop the agent back to low.
+After every successful/non-retryable agent run, the extension restores reasoning to the session's starting level. Retryable transport/provider failures keep the current level so Pi's auto-retry does not accidentally drop the agent back to the baseline.
 
 ## Why
 
-Pi already supports reasoning levels. This package exposes a narrow agent-callable tool so the agent can raise its budget when a prompt or in-progress discovery actually needs it, while returning to cheap/default operation afterward.
+Pi already supports reasoning levels. This package exposes a narrow agent-callable tool so the agent can raise or lower its budget when a prompt or in-progress discovery actually needs it, while returning to the user's starting level afterward.
 
 The prompt is conservative: agents are told to use the tool sparingly and preferably in parallel with other useful tool calls, avoiding standalone reasoning-change turns.
 
@@ -48,7 +48,8 @@ Behavior:
 2. Extension calls `pi.setThinkingLevel(level)`.
 3. Tool result reports the previous and applied level.
 4. If Pi clamps the requested level because of model capability, the result says so.
-5. On `agent_end`, the extension resets reasoning to `low` unless the last assistant message is a retryable error.
+5. On the first `agent_start`, the extension captures the session's starting reasoning level.
+6. On `agent_end`, the extension restores reasoning to that starting level unless the last assistant message is a retryable error.
 
 ## Agent-facing prompt copy
 

@@ -11,7 +11,7 @@ type LastSelection = {
 };
 
 const TOOL_REASONING_LEVELS = ["low", "medium", "high"] as const;
-const DEFAULT_REASONING_LEVEL = "low" satisfies ToolReasoningLevel;
+const FALLBACK_BASELINE_REASONING_LEVEL = "low" satisfies ToolReasoningLevel;
 const RETRYABLE_ERROR_PATTERNS = [
 	/\boverloaded\b/i,
 	/\brate.?limit(?:ed)?\b|\btoo many requests\b/i,
@@ -69,6 +69,7 @@ function isRetryableAssistantError(message: AssistantMessage | undefined, contex
 
 export default function autoReasoningSelector(pi: ExtensionAPI) {
 	let lastSelection: LastSelection | undefined;
+	let baselineReasoningLevel: AppliedReasoningLevel | undefined;
 
 	pi.registerTool({
 		name: "change_reasoning",
@@ -117,11 +118,15 @@ export default function autoReasoningSelector(pi: ExtensionAPI) {
 		},
 	});
 
+	pi.on("agent_start", async () => {
+		baselineReasoningLevel ??= pi.getThinkingLevel();
+	});
+
 	pi.on("agent_end", async (event, ctx) => {
 		const lastAssistant = getLastAssistantMessage(event.messages);
 		if (isRetryableAssistantError(lastAssistant, ctx.model?.contextWindow)) {
 			return;
 		}
-		pi.setThinkingLevel(DEFAULT_REASONING_LEVEL);
+		pi.setThinkingLevel(baselineReasoningLevel ?? FALLBACK_BASELINE_REASONING_LEVEL);
 	});
 }
