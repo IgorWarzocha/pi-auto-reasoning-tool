@@ -12,7 +12,26 @@ type LastSelection = {
 
 const TOOL_REASONING_LEVELS = ["low", "medium", "high"] as const;
 const DEFAULT_REASONING_LEVEL = "low" satisfies ToolReasoningLevel;
-const RETRYABLE_ERROR_PATTERN = /overloaded|provider.?returned.?error|rate.?limit|too many requests|429|500|502|503|504|service.?unavailable|server.?error|internal.?error|network.?error|connection.?error|connection.?refused|connection.?lost|websocket.?closed|websocket.?error|other side closed|fetch failed|upstream.?connect|reset before headers|socket hang up|ended without|stream ended before message_stop|http2 request did not get a response|timed? out|timeout|terminated|retry delay/i;
+const RETRYABLE_ERROR_PATTERNS = [
+	/\boverloaded\b/i,
+	/\brate.?limit(?:ed)?\b|\btoo many requests\b/i,
+	/\b(?:http(?: status)?|status|status code)[:= ]+(?:429|500|502|503|504)\b/i,
+	/\b(?:service.?unavailable|server.?error|internal.?error)\b/i,
+	/\b(?:network|connection).?error\b/i,
+	/\bconnection.?(?:refused|lost)\b/i,
+	/\bwebsocket.?(?:closed|error)\b/i,
+	/\bother side closed\b/i,
+	/\bfetch failed\b/i,
+	/\bupstream.?connect\b/i,
+	/\breset before headers\b/i,
+	/\bsocket hang up\b/i,
+	/\bended without\b/i,
+	/\bstream ended before message_stop\b/i,
+	/\bhttp2 request did not get a response\b/i,
+	/\btimed? out\b|\btimeout\b/i,
+	/\bterminated\b/i,
+	/\bretry delay\b/i,
+] as const;
 
 function formatModelNote(
 	ctx: ExtensionContext,
@@ -44,7 +63,8 @@ function getLastAssistantMessage(messages: unknown[]): AssistantMessage | undefi
 function isRetryableAssistantError(message: AssistantMessage | undefined, contextWindow: number | undefined): boolean {
 	if (!message || message.stopReason !== "error" || !message.errorMessage) return false;
 	if (isContextOverflow(message, contextWindow)) return false;
-	return RETRYABLE_ERROR_PATTERN.test(message.errorMessage);
+	const { errorMessage } = message;
+	return RETRYABLE_ERROR_PATTERNS.some((pattern) => pattern.test(errorMessage));
 }
 
 export default function autoReasoningSelector(pi: ExtensionAPI) {
