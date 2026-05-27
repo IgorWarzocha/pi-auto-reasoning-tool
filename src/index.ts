@@ -1,4 +1,4 @@
-import { StringEnum, Type } from "@earendil-works/pi-ai";
+import { isContextOverflow, StringEnum, Type, type AssistantMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 type ToolReasoningLevel = "low" | "medium" | "high";
@@ -11,7 +11,27 @@ type LastSelection = {
 };
 
 const TOOL_REASONING_LEVELS = ["low", "medium", "high"] as const;
-const DEFAULT_REASONING_LEVEL = "low" satisfies ToolReasoningLevel;
+const FALLBACK_BASELINE_REASONING_LEVEL = "low" satisfies ToolReasoningLevel;
+const RETRYABLE_ERROR_PATTERNS = [
+	/\boverloaded\b/i,
+	/\brate.?limit(?:ed)?\b|\btoo many requests\b/i,
+	/\b(?:http(?: status)?|status|status code)[:= ]+(?:429|500|502|503|504)\b/i,
+	/\b(?:service.?unavailable|server.?error|internal.?error)\b/i,
+	/\b(?:network|connection).?error\b/i,
+	/\bconnection.?(?:refused|lost)\b/i,
+	/\bwebsocket.?(?:closed|error)\b/i,
+	/\bother side closed\b/i,
+	/\bfetch failed\b/i,
+	/\bupstream.?connect\b/i,
+	/\breset before headers\b/i,
+	/\bsocket hang up\b/i,
+	/\bended without\b/i,
+	/\bstream ended before message_stop\b/i,
+	/\bhttp2 request did not get a response\b/i,
+	/\btimed? out\b|\btimeout\b/i,
+	/\bterminated\b/i,
+	/\bretry delay\b/i,
+] as const;
 
 function formatModelNote(
 	ctx: ExtensionContext,
@@ -28,8 +48,28 @@ function formatModelNote(
 	return undefined;
 }
 
+function isAssistantMessage(message: unknown): message is AssistantMessage {
+	return typeof message === "object" && message !== null && (message as { role?: unknown }).role === "assistant";
+}
+
+function getLastAssistantMessage(messages: unknown[]): AssistantMessage | undefined {
+	for (let index = messages.length - 1; index >= 0; index--) {
+		const message = messages[index];
+		if (isAssistantMessage(message)) return message;
+	}
+	return undefined;
+}
+
+function isRetryableAssistantError(message: AssistantMessage | undefined, contextWindow: number | undefined): boolean {
+	if (!message || message.stopReason !== "error" || !message.errorMessage) return false;
+	if (isContextOverflow(message, contextWindow)) return false;
+	const { errorMessage } = message;
+	return RETRYABLE_ERROR_PATTERNS.some((pattern) => pattern.test(errorMessage));
+}
+
 export default function autoReasoningSelector(pi: ExtensionAPI) {
 	let lastSelection: LastSelection | undefined;
+	let baselineReasoningLevel: AppliedReasoningLevel | undefined;
 
 	pi.registerTool({
 		name: "change_reasoning",
@@ -78,7 +118,15 @@ export default function autoReasoningSelector(pi: ExtensionAPI) {
 		},
 	});
 
-	pi.on("agent_end", async () => {
-		pi.setThinkingLevel(DEFAULT_REASONING_LEVEL);
+	pi.on("agent_start", async () => {
+		baselineReasoningLevel ??= pi.getThinkingLevel();
+	});
+
+	pi.on("agent_end", async (event, ctx) => {
+		const lastAssistant = getLastAssistantMessage(event.messages);
+		if (isRetryableAssistantError(lastAssistant, ctx.model?.contextWindow)) {
+			return;
+		}
+		pi.setThinkingLevel(baselineReasoningLevel ?? FALLBACK_BASELINE_REASONING_LEVEL);
 	});
 }

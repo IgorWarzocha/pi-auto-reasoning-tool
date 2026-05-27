@@ -1,6 +1,6 @@
 {
   "name": "@howaboua/pi-auto-reasoning-tool",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "Pi package that gives agents a change_reasoning tool for adjusting reasoning level when substantial work is likely.",
   "type": "module",
   "main": "src/index.ts",
@@ -41,11 +41,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@earendil-works/pi-ai": "^0.74.0"
+    "@earendil-works/pi-ai": "^0.74.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
     "typescript": "^5.9.3",
-    "@earendil-works/pi-coding-agent": "^0.74.0"
+    "@earendil-works/pi-coding-agent": "^0.74.1"
   }
 }
